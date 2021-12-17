@@ -1,0 +1,262 @@
+.Dd December 6th, 2021
+.Dt TOUCH 3L LOCAL
+.Os Codella 0.8.4
+.
+.
+.Sh NAME
+.Nm touch
+.Nd タッチパネル制御クラス
+.
+.
+.Sh LIBRARY
+.Lb Codella (libarmadillo, \-larmadillo)
+.
+.
+.Sh SYNOPSIS
+.In armadillo/touch.hh
+.Vt namespace armadillo ;
+.Vt class armadillo::touch ;
+.Vt typedef struct {
+.Vt 	int p , x , y ;
+.Vt } armadillo::touch::touch_point_t ;
+.Vt typedef struct {
+.Vt 	int type ; // イベントの種別
+.Vt 	int touches ; // 総タッチ数
+.Vt 	int touch ; // イベントの対象であるタッチ番号
+.Vt 	touch_point_t value ; // タッチの座標と強さ
+.Vt } armadillo::touch::touch_event_t ;
+.Fn armadillo::touch::touch
+.Fn armadillo::touch::\(titouch
+.Ft void
+.Fn armadillo::touch::enable
+.Ft void
+.Fn armadillo::touch::disable
+.sp
+// 次の型はマニュアルで表記を簡単にするためだけのものです
+.Vt typedef void (*handler_t)(armadillo::touch::touch_event_t, void *) ;
+.Ft void
+.Fn armadillo::touch::on_none "handler_t handler" "void *arg = NULL"
+.Ft void
+.Fn armadillo::touch::on_start "handler_t handler" "void *arg = NULL"
+.Ft void
+.Fn armadillo::touch::on_move "handler_t handler" "void *arg = NULL"
+.Ft void
+.Fn armadillo::touch::on_end "handler_t handler" "void *arg = NULL"
+.
+.
+.Sh DESCRIPTION
+名前空間
+.Vt armadillo
+に配置されるクラス
+.Vt touch
+を利用してタッチパネルを制御できます.
+インスタンスを生成するとデバイスは利用可能な状態となります.
+インスタンスが破棄されるとデバイスは解放されます.
+.Pp
+コンストラクタ
+.Fn touch
+はデバイスと紐付けられたインスタンスを生成します.
+.Pp
+デストラクタ
+.Fn \(titouch
+はインスタンスに紐付けられたデバイスを解放します.
+.Pp
+メンバ関数
+.Fn enable
+はタッチパネルを有効にします.
+.Pp
+メンバ関数
+.Fn disable
+はタッチパネルを無効にします.
+この関数を呼び出した後にメンバ関数
+.Fn enable
+を再度呼び出すことでセンサを再度有効にできます.
+.Pp
+メンバ関数
+.Fn on_none
+はタッチの開始や移動, 終了もない場合に発火するイベントのハンドラを
+.Fa handler
+に設定します.
+省略可能な
+.Fa arg
+を指定すると
+.Fa handler
+が呼び出されたときの第二引数として利用できます.
+.Pp
+メンバ関数
+.Fn on_start
+はタッチの開始時に発火するイベントのハンドラを
+.Fa handler
+に設定します.
+省略可能な
+.Fa arg
+を指定すると
+.Fa handler
+が呼び出されたときの第二引数として利用できます.
+.Pp
+メンバ関数
+.Fn on_move
+はタッチの移動時に発火するイベントのハンドラを
+.Fa handler
+に設定します.
+省略可能な
+.Fa arg
+を指定すると
+.Fa handler
+が呼び出されたときの第二引数として利用できます.
+.Pp
+メンバ関数
+.Fn on_end
+はタッチの終了時に発火するイベントのハンドラを
+.Fa handler
+に設定します.
+省略可能な
+.Fa arg
+を指定すると
+.Fa handler
+が呼び出されたときの第二引数として利用できます.
+.Pp
+イベントハンドラ
+.Fa handler
+は各種イベント発火時に呼び出されます.
+それぞれのイベントハンドラはそれぞれのスレッドで実行されます.
+第一引数はイベントの情報を含む構造体です.
+構造体のメンバ
+.Fa type
+の値は
+.Dv TE_NONE , TE_START , TE_MOVE , TE_END
+のいずれかです.
+.
+.
+.Sh IMPLEMENTATION NOTES
+クラス
+.Vt touch
+の内部では
+.Xr pthread 7
+を利用しています.
+同一プロセス内で複数の
+.Vt touch
+インスタンスが生成されると正常に動作しない恐れがあります.
+.Pp
+各種イベントハンドラは約 8 msec の周期で呼び出されます.
+イベントハンドラの処理が長時間に渡ると,
+資源不足に陥り新たなイベントハンドラを実行できなくなります.
+.
+.
+.Sh RETURN VALUES
+クラス
+.Vt touch
+のいかなるメンバ関数も値を返しません.
+.
+.
+.Sh ERRORS
+クラス
+.Vt touch
+のコンストラクタ及び各メンバ関数は,
+失敗すると
+.Vt std::runtime_error
+の例外を発生させます.
+例外のメンバ関数である
+.Fn what
+はエラーに関するメッセージを返します.
+エラーが発生した後の
+.Vt touch
+インスタンスの状態は不定です.
+.
+.
+.Sh EXAMPLES
+次の例は画面に赤と青のボタンを表示し,
+どちらが押下されたのか標準出力に表示します.
+.Bd -literal
+#include <cstdio>       // printf(3)
+#include <ctime>        // nanosleep(2)
+#include <armadillo/display.hh>
+#include <armadillo/touch.hh>
+
+#define B_WIDTH         200
+#define B_HEIGHT        280
+#define B_TOP           100
+#define B_LEFT_1        100
+#define B_LEFT_2        500
+
+struct my_arg {
+	armadillo::display *disp;
+	struct { int x, y; } position;
+	bool done;
+};
+
+void touch_start(armadillo::touch::touch_event_t ev, void *va)
+{
+	struct my_arg *arg = (struct my_arg *)va;
+
+	if (ev.value.y < B_TOP || ev.value.y > B_TOP + B_HEIGHT)
+		return;
+	if (ev.value.x > B_LEFT_1 && ev.value.x < B_LEFT_1 + B_WIDTH) {
+		arg->disp->rect(B_LEFT_1, B_TOP, B_WIDTH, B_HEIGHT,
+				armadillo::display::color("red"), true);
+		arg->done = true;
+	}
+	if (ev.value.x > B_LEFT_2 && ev.value.x < B_LEFT_2 + B_WIDTH) {
+		arg->disp->rect(B_LEFT_2, B_TOP, B_WIDTH, B_HEIGHT,
+				armadillo::display::color("blue"), true);
+		arg->done = true;
+	}
+
+	arg->position.x = ev.value.x;
+	arg->position.y = ev.value.y;
+}
+
+int main(void)
+{
+	armadillo::display disp;
+
+	disp.draw_init();
+	disp.rect(B_LEFT_1, B_TOP, B_WIDTH, B_HEIGHT,
+			armadillo::display::color("red"));
+	disp.rect(B_LEFT_2, B_TOP, B_WIDTH, B_HEIGHT,
+			armadillo::display::color("blue"));
+	disp.draw_end();
+
+	struct my_arg arg;
+	arg.disp = &disp;
+	arg.done = false;
+
+	armadillo::touch tp;
+	tp.on_start(touch_start, &arg);
+
+	tp.enable();
+	while (arg.done != true) {
+		struct timespec ts;
+		ts.tv_sec  = 0;
+		ts.tv_nsec = (long)1e6;
+		nanosleep(&ts, NULL);
+	}
+	tp.disable();
+
+	if (arg.position.x > B_LEFT_1 && arg.position.x < B_LEFT_1 + B_WIDTH)
+		printf("RED\en");
+	if (arg.position.x > B_LEFT_2 && arg.position.x < B_LEFT_2 + B_WIDTH)
+		printf("BLUE\en");
+
+	return 0;
+}
+.Ed
+.Pp
+このプログラムをコンパイルするには次のように実行します.
+.Dl % c++ test.cc -larmadillo `pkg-config --cflags freetype2`
+.
+.
+.Sh FILES
+.Pa /dev/input/event1
+.
+.
+.Sh COPYRIGHT
+Copyright \(co 2021
+.An KusaReMKN .
+.Pp
+プログラムは MIT License で利用可能です.
+文書は CC-BY 4.0 かそれ以上で利用可能です.
+.
+.
+./" Sh BUGS
+./" とくにないとおもいます.

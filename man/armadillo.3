@@ -1,0 +1,120 @@
+.Dd December 6th, 2021
+.Dt ARMADILLO 3L LOCAL
+.Os Codella 0.8.4
+.
+.
+.Sh NAME
+.Nm armadillo
+.Nd Armadillo 800 EVA とその周辺機器用のライブラリ
+.
+.
+.Sh LIBRARY
+.Lb Codella (libarmadillo, \-larmadillo)
+.
+.
+.Sh SYNOPSIS
+.In armadillo/armadillo.hh
+.Vt namespace armadillo ;
+.Vt class armadillo::accel ;
+.Vt class armadillo::clcd ;
+.Vt class armadillo::d7seg ;
+.Vt class armadillo::display ;
+.Vt class armadillo::touch ;
+.
+.
+.Sh DESCRIPTION
+.Dq Codella
+は Armadillo 800 EVA とその周辺機器用のライブラリを提供します.
+周辺機器は各種クラスを通して利用可能となります.
+各クラスは名前空間
+.Vt armadillo
+に配置されます.
+.Pp
+各種クラスのインスタンスを生成するとデバイスは利用可能な状態となります.
+インスタンスが破棄されると各種デバイスは解放されます.
+.Ss クラス一覧
+.Bl -tag -width "1234"
+.It Vt armadillo::accel
+3 軸加速度センサ制御クラス
+.It Vt armadillo::clcd
+キャラクタ LCD 制御クラス
+.It Vt armadillo::d7seg
+7 セグメントディスプレイ制御クラス
+.It Vt armadillo::display
+メインディスプレイ制御クラス
+.It Vt armadillo::touch
+タッチパネル制御クラス
+.El
+.
+.
+./" Sh IMPLEMENTATION NOTES
+./" とくになし
+.
+.
+./" Sh RETURN VALUES
+./" とくになし
+.
+.
+.Sh ERRORS
+各種クラスのコンストラクタ及び各メンバ関数は,
+失敗すると
+.Vt std::runtime_error
+の例外を発生させます.
+例外のメンバ関数である
+.Fn what
+はエラーに関するメッセージを返します.
+エラーが発生した後のインスタンスの状態は不定です.
+.
+.
+./" Sh EXAMPLES
+./" ありません.
+.
+.
+./" Sh FILES
+./" ありません.
+.
+.
+.Sh COPYRIGHT
+Copyright \(co 2021
+.An KusaReMKN .
+.Pp
+プログラムは MIT License で利用可能です.
+文書は CC-BY 4.0 かそれ以上で利用可能です.
+.
+.
+.bp
+.Sh MIT License
+Copyright 2021 KusaReMKN
+.Pp
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the
+.Dq Software ) ,
+to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+.Pp
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+.Pp
+THE SOFTWARE IS PROVIDED
+.Dq AS IS ,
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+.
+.
+.Sh Creative Commons Attribution 4.0 International Public License
+.Aq https://creativecommons.org/licenses/by/4.0/legalcode
+を参照してください.
+.
+.
+.Sh BUGS
+.In armadillo/armadillo.hh
+が取り込まれると,
+定数
+.Dv _GNU_SOURCE
+は undef されます.

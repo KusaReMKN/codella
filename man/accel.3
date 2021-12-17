@@ -1,0 +1,167 @@
+.Dd December 6th, 2021
+.Dt ACCEL 3L LOCAL
+.Os Codella 0.8.4
+.
+.
+.Sh NAME
+.Nm accel
+.Nd 3 軸加速度センサ制御クラス
+.
+.
+.Sh LIBRARY
+.Lb Codella (libarmadillo, \-larmadillo)
+.
+.
+.Sh SYNOPSIS
+.In armadillo/accel.hh
+.Vt namespace armadillo ;
+.Vt class armadillo::accel ;
+.Fn armadillo::accel::accel
+.Fn armadillo::accel::\(tiaccel
+.Ft void
+.Fn armadillo::accel::enable
+.Ft void
+.Fn armadillo::accel::disable
+.Ft void
+.Fn armadillo::accel::set_delay "unsigned int d"
+.Ft int
+.Fn armadillo::accel::get_value "double *x" "double *y" "double *z"
+.Ft int
+.Fn armadillo::accel::get_value "double *a"
+.
+.
+.Sh DESCRIPTION
+名前空間
+.Vt armadillo
+に配置されるクラス
+.Vt accel
+を利用して 3 軸加速度センサを制御できます.
+インスタンスを生成するとデバイスは利用可能な状態となります.
+インスタンスが破棄されるとデバイスは解放されます.
+.Pp
+コンストラクタ
+.Fn accel
+はデバイスと紐付けられたインスタンスを生成します.
+.Pp
+デストラクタ
+.Fn \(tiaccel
+はインスタンスに紐付けられたデバイスを解放します.
+.Pp
+メンバ関数
+.Fn enable
+は 3 軸加速度センサを有効にします.
+この関数を呼び出した後にメンバ関数
+.Fn get_value
+を読み出して測定値を読み取ることができます.
+.Pp
+メンバ関数
+.Fn disable
+は 3 軸加速度センサを無効にします.
+この関数を呼び出した後にメンバ関数
+.Fn enable
+を再度呼び出すことでセンサを再度有効にできます.
+.Pp
+メンバ関数
+.Fn set_delay
+は 3 軸加速度センサが測定値を報告する間隔を
+.Fa d
+msec に設定します.
+デフォルトの間隔はコンストラクタによって 1 msec に設定されています.
+.Pp
+メンバ関数
+.Fn get_value
+は 3 軸加速度センサの測定値を
+.Fa x , y , z
+あるいは
+.Fa a
+の指す領域に格納します.
+.Fa x , y
+及び
+.Fa z
+が指定された場合は測定された各軸方向の加速度が格納されます.
+.Fa a
+が指定された場合は測定された加速度の絶対値が格納されます.
+.
+.
+.Sh IMPLEMENTATION NOTES
+クラス
+.Vt accel
+の内部では
+.Xr pthread 7
+を利用しています.
+同一プロセス内で複数の
+.Vt accel
+インスタンスが生成されると正常に動作しない恐れがあります.
+.
+.
+.Sh RETURN VALUES
+メンバ関数
+.Fn get_value
+は成功すると 0 を返します.
+失敗すると \-1 を返します.
+失敗の主な理由は 3 軸加速度センサが測定値の報告を完了していないことでしょう.
+.
+.
+.Sh ERRORS
+クラス
+.Vt accel
+のコンストラクタ及び各メンバ関数は,
+失敗すると
+.Vt std::runtime_error
+の例外を発生させます.
+例外のメンバ関数である
+.Fn what
+はエラーに関するメッセージを返します.
+エラーが発生した後の
+.Vt accel
+インスタンスの状態は不定です.
+.
+.
+.Sh EXAMPLES
+次の例は 3 軸加速度センサの値を読み取って標準出力に出力します.
+.Bd -literal -offset indent
+#include <ctime>	// nanosleep(2)
+#include <cstdio>	// std::printf(3)
+#include <armadillo/accel.hh>
+
+int main()
+{
+	armadillo::accel acc;
+	acc.enable();
+
+	double x, y, z;
+	while (acc.get_value(&x, &y, &z) != 0) {
+		struct timespec ts;
+		ts.tv_sec  = 0;
+		ts.tv_nsec = (long)1e6;
+		nanosleep(&ts, NULL);
+	}
+	
+	std::printf("x: %f, y: %f, z: %f\en", x, y, z);
+
+	return 0;
+}
+.Ed
+.Pp
+このプログラムをコンパイルするには次のように実行します.
+.Dl % c++ test.cc -larmadillo
+.
+.
+.Sh FILES
+.Pa /sys/devices/platform/i2c-sh_mobile.1/i2c-1/1-004c/delay
+.Pa /sys/devices/platform/i2c-sh_mobile.1/i2c-1/1-004c/enable
+.Pa /dev/input/event2
+.
+.
+.Sh COPYRIGHT
+Copyright \(co 2021
+.An KusaReMKN .
+.Pp
+プログラムは MIT License で利用可能です.
+文書は CC-BY 4.0 かそれ以上で利用可能です.
+.
+.
+.Sh BUGS
+3 軸加速度センサの測定値は \(+-1.5
+.Va g ( g
+は重力加速度) 程度の誤差を含んでいる恐れがあります.

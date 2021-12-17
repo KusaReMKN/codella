@@ -1,0 +1,487 @@
+.Dd December 6th, 2021
+.Dt DISPLAY 3L LOCAL
+.Os Codella 0.8.4
+.
+.
+.Sh NAME
+.Nm display
+.Nd メインディスプレイ制御クラス
+.
+.
+.Sh LIBRARY
+.Lb Codella (libarmadillo, \-larmadillo)
+.
+.
+.Sh SYNOPSIS
+.In armadillo/display.hh
+.Vt namespace armadillo ;
+.Vt class armadillo::display ;
+.
+.Ss 画面描画に利用する色の管理
+.Vt class armadillo::display::color ;
+.Vt typedef struct {
+.Vt 	uint8_t b ;
+.Vt 	uint8_t g ;
+.Vt 	uint8_t r ;
+.Vt 	uint8_t a ;
+.Vt } armadillo::display::color::color_t ;
+.Fn armadillo::display::color::color \
+"uint8_t r" "uint8_t g" "uint8_t b" "uint8_t a = 0"
+.Fn armadillo::display::color::color "armadillo::display::color::color_t c"
+.Fn armadillo::display::color::color "std::string name"
+.Ft armadillo::display::color::color_t
+.Fn armadillo::display::color::get_color
+.
+.Ss 画面描画の制御
+.Vt static int const armadillo::display::DISPLAY_WIDTH ;
+.Vt static int const armadillo::display::DISPLAY_HEIGHT ;
+.Fn armadillo::display::display
+.Fn armadillo::display::\(tidisplay
+.Ft void
+.Fn armadillo::display::draw_start
+.Ft void
+.Fn armadillo::display::draw_init
+.Ft void
+.Fn armadillo::display::draw_end
+.Ft void
+.Fn armadillo::display::clear
+.
+.Ss 単純な描画処理
+.Ft void
+.Fn armadillo::display::fill "armadillo::display::color c"
+.Ft void
+.Fn armadillo::display::dot "int x" "int y" "armadillo::display::color c"
+.Ft void
+.Fn armadillo::display::dot_alpha "int x" "int y" "armadillo::display::color c"
+.Ft void
+.Fn armadillo::display::line \
+"int x1" "int y1" "int x2" "int y2" "armadillo::display::color c"
+.Ft void
+.Fn armadillo::display::rect \
+"int x" "int y" "int w" "int h" "armadillo::display::color c" "bool f = 0"
+.Ft void
+.Fn armadillo::display::ellipse \
+"int x" "int y" "int a" "int b" "armadillo::display::color c" "bool f = 0"
+.Ft void
+.Fn armadillo::display::circle \
+"int x" "int y" "int r" "armadillo::display::color c" "bool f = 0"
+.
+.Ss 文字と画像の描画
+.Ft void
+.Fn armadillo::display::text_font "const char *path"
+.Ft void
+.Fn armadillo::display::text_size "unsigned int px"
+.Ft void
+.Fn armadillo::display::text \
+"int x" "int y" "const char *s" "armadillo::display::color c" "bool v = 0"
+.Ft void
+.Fn armadillo::display::printf \
+"int x" "int y" "armadillo::display::color c" "bool v" "const char *f" "..."
+.Ft void
+.Fn armadillo::display::draw_jpeg \
+"int x" "int y" "int w" "int h" "const char *path"
+.Ft void
+.Fn armadillo::display::draw_jpeg \
+"int x" "int y" "int w" "int h" "unsigned char *data" "unsigned long len"
+.
+.
+.Sh DESCRIPTION
+名前空間
+.Vt armadillo
+に配置されるクラス
+.Vt display
+を利用してメインディスプレイを制御できます.
+インスタンスを生成するとデバイスは利用可能な状態となります.
+インスタンスが破棄されるとデバイスは解放されます.
+.
+.Ss 画面描画に利用する色の管理
+クラス
+.Vt display
+の内部クラス
+.Vt color
+を利用してクラス
+.Vt display
+の内部で利用する色を管理します.
+クラス
+.Vt display
+のメンバ関数に対して色を指定する場合はクラス
+.Vt color
+のインスタンスを利用します.
+.Pp
+コンストラクタ
+.Fn color
+は色情報を生成します.
+.Fa r , g , b
+と省略可能な
+.Fa a
+が指定された場合は RGB 値として
+.Fa r , g , b
+を, \(*a 値 (透明度) として
+.Fa a
+を利用した色情報を持つインスタンスを生成します.
+定義域は [0, 256) です.
+範囲外の場合は下位 8 bit の値が利用されます.
+.Fa c
+が指定された場合はそれをそのまま利用した色情報を持つインスタンスを生成します
+(この場合は専ら内部用です).
+.Fa name
+が指定された場合は対応する色情報を検索し,
+合致した色情報を持つインスタンスを生成します.
+.Fa name
+には CSS の色キーワード
+.Dq red
+や
+.Dq turquoise
+などのほか,
+HTML の # + 16 進数値記法
+.Dq #7FFFD4
+や
+.Dq #639
+などを指定できます.
+CSS の色キーワードを指定する際は小文字の英字を利用してください.
+.Pp
+メンバ関数
+.Fn get_color
+はインスタンスから色情報を取得します
+(これは専ら内部用です).
+.
+.Ss 画面描画の制御
+.Pp
+コンストラクタ
+.Fn display
+はデバイスと紐付けられたインスタンスを生成します.
+.Pp
+デストラクタ
+.Fn \(tidisplay
+はインスタンスに紐付けられたデバイスを解放します.
+.Pp
+メンバ関数
+.Fn draw_start
+は
+.Dq 描画単位
+を開始します.
+ここで
+.Dq 描画単位
+とは描画処理のまとまりのことを指します.
+例えば, 背景画面を描画する処理のまとまりなどです.
+メンバ関数
+.Fn draw_start
+はメンバ関数
+.Fn draw_end
+と対になるように利用する必要があります.
+.Pp
+メンバ関数
+.Fn draw_init
+はメンバ関数
+.Fn draw_start
+と似ていますが,
+この関数が最も外側の描画単位を開始する時に画面をクリアすることが異なります.
+.Pp
+メンバ関数
+.Fn draw_end
+は描画単位を終了します.
+この関数が最も外側の描画単位を終了するときに描画処理が画面に適用されます.
+.Pp
+メンバ関数
+.Fn clear
+は画面をクリアします.
+この処理は描画単位に囚われず, 即座に画面に適用されます.
+.
+.Ss 単純な描画処理
+メンバ関数
+.Fn fill
+は画面全体を色
+.Fa c
+で塗り潰します.
+.Pp
+メンバ関数
+.Fn dot
+は画面上の座標
+.Fa ( x , y )
+に色
+.Fa c
+の点を描画します.
+.Pp
+メンバ関数
+.Fn line
+は画面上の座標
+.Fa ( x1 , y1 )
+から
+.Fa ( x2 , y2 )
+に色
+.Fa c
+の直線を描画します.
+.Pp
+メンバ関数
+.Fn rect
+は画面上の座標
+.Fa ( x , y )
+を左上の頂点に持ち
+.Fa ( w , h )
+の幅と高さを持つ矩形を色
+.Fa c
+で描画します.
+.Fa f
+が真の場合は塗り潰されます.
+.Pp
+メンバ関数
+.Fn ellipse
+は画面上に座標
+.Fa ( x , y )
+を中心に x, y 各軸方向に
+.Fa ( a , b )
+の経を持つ楕円を色
+.Fa c
+で描画します.
+.Fa f
+が真の場合は塗り潰されます.
+.Pp
+メンバ関数
+.Fn circle
+は画面上の
+.Fa ( x , y )
+を中心に半径
+.Fa r
+の円を色
+.Fa c
+で描画します.
+.Fa f
+が真の場合は塗り潰されます.
+.
+.Ss 文字と画像の描画
+メンバ関数
+.Fn text_font
+はメンバ関数
+.Fn text
+が文字列を描画する際に利用するフォントのファイルパスを指定します.
+少なくとも TTF と OTF 形式のフォントを利用できます.
+.Pp
+メンバ関数
+.Fn text_size
+はメンバ関数
+.Fn text
+が文字列を描画する際の文字の高さを
+.Fa px
+ピクセルに指定します.
+.Pp
+メンバ関数
+.Fn text
+は画面上の座標
+.Fa ( x , y )
+を一文字目の左下として文字列
+.Fa s
+を色
+.Fa c
+で描画します.
+.Fa v
+が真の場合は縦書きに描画されます.
+.Pp
+メンバ関数
+.Fn printf
+は文字列
+.Fa f
+に従って
+.Xr printf 3
+と同様に整形された文字列をメンバ関数
+.Fn text
+のように描画します.
+.Pp
+メンバ関数
+.Fn draw_jpeg
+は画面上の座標
+.Fa ( x , y )
+を左上の頂点に持ち
+.Fa ( w , h )
+の幅と高さに伸縮された画像を描画します.
+.Fa w
+か
+.Fa h
+のいずれか 1 つに \-1 が指定された場合,
+縦横比を維持したまま伸縮しようとします.
+.Fa w
+と
+.Fa h
+のいずれも \-1 が指定された場合,
+画像を伸縮しません
+(そのままのサイズを利用します).
+.Fa path
+が指定された場合は画像ファイルをそこから読み取ります.
+.Fa data
+と
+.Fa len
+が指定された場合はそれを画像イメージとして利用します.
+.
+.
+./" Sh IMPLEMENTATION NOTES
+./" とくに思いつかない.
+.
+.
+.Sh RETURN VALUES
+内部クラス
+.Vt color
+のメンバ関数
+.Fn get_color
+はインスタンスが保持する色情報を返します.
+これは専ら内部用の値です.
+.
+.
+.Sh ERRORS
+クラス
+.Vt display
+とその内部クラス
+.Vt color
+のコンストラクタ及び各メンバ関数は,
+失敗すると
+.Vt std::runtime_error
+の例外を発生させます.
+例外のメンバ関数である
+.Fn what
+はエラーに関するメッセージを返します.
+エラーが発生した後の各インスタンスの状態は不定です.
+.
+.
+.Sh ENVIRONMENT
+コンストラクタ
+.Fn display
+は環境変数を参照してプロセスのカレントロカール
+.Dv LC_CTYPE
+を変更します.
+利用される可能性のある環境変数はその可能性の高い順に,
+.Dv LC_ALL , LC_CTYPE , LANG
+です.
+.
+.
+.Sh EXAMPLES
+.Ss 単純な図形の描画
+次の例はメインディスプレイに点や直線, 矩形を描画します.
+.Bd -literal
+#include <armadillo/display.hh>
+
+int main()
+{
+	armadillo::display disp;
+
+	// 描画単位の開始
+	disp.draw_init();
+
+	// 画面の塗り潰し
+	disp.fill(armadillo::display::color(0x00, 0x00, 0x8b));
+	// 点の描画
+	disp.dot(100, 100, armadillo::display::color(255, 255, 255));
+	// 直線の描画
+	disp.line(200, 200, 400, 300, armadillo::display::color("red"));
+	// 矩形の描画
+	disp.rect(500, 100, 200, 100, armadillo::display::color("#7cfc00"));
+	// 矩形の描画 (塗り潰し)
+	disp.rect(500, 300, 200, 100, armadillo::display::color("cyan"), true);
+
+	// 描画単位の終了
+	disp.draw_end();
+}
+.Ed
+.
+.Ss 文字列の描画
+次の例はメインディスプレイに
+.Dq 使徒、襲来
+の文字列を描画します.
+実行するにはファイル
+.Pa ShipporiMincho-ExtraBold.ttf
+をプログラムと同じディレクトリに配置する必要があります.
+.Bd -literal
+#include <armadillo/display.hh>
+
+int main()
+{
+	armadillo::display disp;
+	disp.text_font("ShipporiMincho-ExtraBold.ttf");
+
+	disp.draw_init();
+	disp.text_size(75);
+	disp.text(20, 160, "第壱話", armadillo::display::color("white"));
+	disp.text_size(150);
+	disp.text(20, 330, "使徒", armadillo::display::color("white"), 1);
+	disp.text(170, 480, "、", armadillo::display::color("white"));
+	disp.text(245, 480, "襲来", armadillo::display::color("white"));
+	disp.draw_end();
+}
+.Ed
+.
+.Ss 画像の描画
+次の例はメインディスプレイに画像を描画します.
+実行するにはファイル
+.Pa test.jpg
+をプログラムと同じディレクトリに配置する必要があります.
+.Bd -literal
+#include <cstdio>
+#include <cstdlib>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <armadillo/display.hh>
+
+int main()
+{
+	armadillo::display disp;
+	disp.clear();
+
+	// 等倍で表示
+	disp.draw_jpeg(0, 0, -1, -1, "test.jpg");
+	// 横幅のみ指定して自動伸縮
+	disp.draw_jpeg(100, 100, 300, -1, "test.jpg");
+	// 幅と高さを指定して伸縮
+	disp.draw_jpeg(200, 200, 400, 100, "test.jpg");
+
+	// ファイルをメモリに読み込む
+	std::FILE *fp;
+	fp = std::fopen("test.jpg", "rb");
+	if (fp == NULL) {
+		std::perror("fopen");
+		std::exit(EXIT_FAILURE);
+	}
+	int err;
+	struct stat sb;
+	err = fstat(fileno(fp), &sb);
+	if (err == -1) {
+		std::perror("fstat");
+		std::exit(EXIT_FAILURE);
+	}
+	unsigned char *buf;
+	buf = (unsigned char *)std::malloc((size_t)sb.st_size);
+	if (buf == NULL) {
+		std::perror("malloc");
+		std::exit(EXIT_FAILURE);
+	}
+	(void)fread(buf, 1, (size_t)sb.st_size, fp);
+	fclose(fp);
+
+	// メモリの内容から画像を表示
+	disp.draw_jpeg(300, 300, -1, -1, buf, (unsigned long)sb.st_size);
+	free(buf);
+
+	return 0;
+}
+.Ed
+.Pp
+これらプログラムをコンパイルするには次のように実行します.
+.Dl % c++ test.cc -larmadillo `pkg-config --cflags freetype2`
+.
+.
+.Sh FILES
+.Pa /dev/fb0
+.
+.
+.Sh COPYRIGHT
+Copyright \(co 2021
+.An KusaReMKN .
+.Pp
+プログラムは MIT License で利用可能です.
+文書は CC-BY 4.0 かそれ以上で利用可能です.
+.
+.
+.Sh BUGS
+描画処理は決して軽い処理ではありません.
+実行時間に配慮してください.
+.Pp
+色キーワードとして
+.Dq KusaReMKN
+を指定できます.

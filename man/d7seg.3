@@ -1,0 +1,124 @@
+.Dd December 6th, 2021
+.Dt D7SEG 3L LOCAL
+.Os Codella 0.8.4
+.
+.
+.Sh NAME
+.Nm d7seg
+.Nd 7 セグメントディスプレイ制御クラス
+.
+.
+.Sh LIBRARY
+.Lb Codella (libarmadillo, \-larmadillo)
+.
+.
+.Sh SYNOPSIS
+.In armadillo/clcd.hh
+.Vt namespace armadillo ;
+.Vt class armadillo::d7seg ;
+.Fn armadillo::d7seg::d7seg
+.Fn armadillo::d7seg::\(tid7seg
+.Ft void
+.Fn armadillo::d7seg::set_decimal "int n"
+.Ft void
+.Fn armadillo::d7set::set_hexadecimal "int n"
+.
+.
+.Sh DESCRIPTION
+名前空間
+.Vt armadillo
+に配置されるクラス
+.Vt d7seg
+を利用してキャラクタ LCD を制御できます.
+インスタンスを生成するとデバイスは利用可能な状態となります.
+インスタンスが破棄されるとデバイスは解放されます.
+.Pp
+コンストラクタ
+.Fn d7seg
+はデバイスと紐付けられたインスタンスを生成します.
+.Pp
+デストラクタ
+.Fn \(tid7seg
+は紐付けられたデバイスを解放します.
+.Pp
+メンバ関数
+.Fn set_decimal
+は
+.Fa n
+を 10 進表記した際の下位 2 桁をデバイスに出力します.
+.Pp
+メンバ関数
+.Fn set_hexadecimal
+は
+.Fa n
+を 16 進表記した際の下位 2 桁をデバイスに出力します.
+.
+.
+./" Sh IMPLEMENTATION NOTES
+./" 実装上の注意はありません.
+.
+.
+.Sh RETURN VALUES
+クラス
+.Vt d7seg
+のいかなるメンバ関数も値を返しません.
+.
+.
+.Sh ERRORS
+クラス
+.Vt d7seg
+のコンストラクタ及び各メンバ関数は,
+失敗すると
+.Vt std::runtime_error
+の例外を発生させます.
+例外のメンバ関数である
+.Fn what
+はエラーに関するメッセージを返します.
+エラーが発生した後の
+.Vt d7seg
+インスタンスの状態は不定です.
+.
+.
+./" ↓ プログラムリストが分断されるのを避ける
+.bp
+.Sh EXAMPLES
+次の例は 1 から 100 までの数を 7 セグメントディスプレイに表示します.
+.Bd -literal -offset indent
+#include <ctime>	// nanosleep(2)
+#include <armadillo/d7seg.hh>
+
+int main()
+{
+	armadillo::d7seg d7;
+
+	for (int i = 1; i <= 100; i++) {
+		d7.set_decimal(i);
+
+		struct timespec ts;
+		ts.tv_sec  = 0;
+		ts.tv_nsec = (long)100e6;
+		nanosleep(&ts, NULL);
+	}
+
+	return 0;
+}
+.Ed
+.Pp
+このプログラムをコンパイルするには次のように実行します.
+.Dl % c++ test.cc -larmadillo
+.
+.
+.Sh FILES
+.Pa /dev/d7seg
+.
+.
+.Sh COPYRIGHT
+Copyright \(co 2021
+.An KusaReMKN .
+.Pp
+プログラムは MIT License で利用可能です.
+文書は CC-BY 4.0 かそれ以上で利用可能です.
+.
+.
+./" Sh BUGS
+./" 目立ったバグはありません.

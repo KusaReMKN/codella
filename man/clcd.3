@@ -1,0 +1,204 @@
+.Dd December 6th, 2021
+.Dt CLCD 3L LOCAL
+.Os Codella 0.8.4
+.
+.
+.Sh NAME
+.Nm clcd
+.Nd キャラクタ LCD 制御クラス
+.
+.
+.Sh LIBRARY
+.Lb Codella (libarmadillo, \-larmadillo)
+.
+.
+.Sh SYNOPSIS
+.In armadillo/clcd.hh
+.Vt namespace armadillo ;
+.Vt class armadillo::clcd ;
+.Fn armadillo::clcd::clcd
+.Fn armadillo::clcd::\(ticlcd
+.Ft int
+.Fn armadillo::clcd::putc "int n"
+.Ft int
+.Fn armadillo::clcd::printf "const char *fmt" ...
+.Ft void
+.Fn armadillo::clcd::puts "const char *str"
+.Ft void
+.Fn armadillo::clcd::puts "std::string str"
+.Ft int
+.Fn armadillo::clcd::clear
+.Ft int
+.Fn armadillo::clcd::curpos "int r" "int c"
+.Ft int
+.Fn armadillo::clcd::reset
+.
+.
+.Sh DESCRIPTION
+名前空間
+.Vt armadillo
+に配置されるクラス
+.Vt clcd
+を利用してキャラクタ LCD を制御できます.
+インスタンスを生成するとデバイスは利用可能な状態となります.
+インスタンスが破棄されるとデバイスは解放されます.
+.Pp
+コンストラクタ
+.Fn clcd
+はデバイスと紐付けられたインスタンスを生成します.
+.Pp
+デストラクタ
+.Fn \(ticlcd
+は紐付けられたデバイスを解放します.
+.Pp
+メンバ関数
+.Fn putc
+は文字
+.Fa c
+をキャラクタ LCD に出力します.
+.Pp
+メンバ関数
+.Fn printf
+は文字列
+.Fa fmt
+に従って
+.Xr printf 3
+と同様に整形された文字列をキャラクタ LCD に出力します.
+.Pp
+メンバ関数
+.Fn puts
+は文字列
+.Fa str
+をキャラクタ LCD に出力します.
+.Pp
+メンバ関数
+.Fn clear
+はキャラクタ LCD の表示をクリアし, カーソルを先頭位置に移動します.
+.Pp
+メンバ関数
+.Fn curpos
+はカーソル位置を
+.Fa r
+行
+.Fa c
+桁目に移動します.
+先頭位置は 1 行 1 桁目です.
+.Pp
+メンバ関数
+.Fn reset
+はキャラクタ LCD の表示をそのままにカーソル位置を先頭位置に移動します.
+.
+.
+.Sh IMPLEMENTATION NOTES
+キャラクタ LCD に特別な文字や文字シーケンスを出力すると動作が変化します:
+.Bl -tag -width "1234" -offset indent
+.It 改行: Li \(aq\en\(aq
+カーソルの現在桁を変更せずに次行へ移動します.
+.It 復帰: Li \(aq\er\(aq
+カーソルの現在行を変更せずに行頭へ移動します.
+.It 改頁: Li \(aq\ef\(aq
+キャラクタ LCD の表示をクリアし, カーソルを先頭位置に移動します.
+.It CUP シーケンス: Li \(dq\ex1b[%d;%dH\(dq , Fa r , c
+カーソルを
+.Va r
+行
+.Va c
+桁目に移動します.
+.El
+.Pp
+メンバ関数
+.Fn clear
+はメンバ関数
+.Fn putc
+に
+.Li \(aq\ef\(aq
+を渡した動作と全く等価です.
+.Pp
+メンバ関数
+.Fn curpos
+はメンバ関数
+.Fn printf
+に
+.Li "\(dq\ex1b[%d;%dH\(dq, r, c"
+を渡した動作と全く等価です.
+.Pp
+メンバ関数
+.Fn reset
+はメンバ関数
+.Fn curpos
+に
+.Li "1, 1"
+を渡した動作を全く等価です.
+.
+.
+.Sh RETURN VALUES
+メンバ関数
+.Fn putc
+は出力した文字を返します.
+.Pp
+メンバ関数
+.Fn printf
+は出力した文字数を返します.
+.
+.
+.Sh ERRORS
+クラス
+.Vt clcd
+のコンストラクタ及び各メンバ関数は,
+失敗すると
+.Vt std::runtime_error
+の例外を発生させます.
+例外のメンバ関数である
+.Fn what
+はエラーに関するメッセージを返します.
+エラーが発生した後の
+.Vt clcd
+インスタンスの状態は不定です.
+.
+.
+.Sh EXAMPLES
+次の例は キャラクタ LCD をクリアし,
+一行目に
+.Dq Hello
+を,
+二行目に
+.Dq ｺﾝﾆﾁﾊ
+を表示します.
+.Bd -literal -offset indent
+#include <armadillo/clcd.hh>
+
+int main()
+{
+	armadillo::clcd clcd;
+	
+	clcd.clear();
+	clcd.puts("Hello!\er\en");
+	clcd.puts("\exBA\exDD\exC6\exC1\exCA");	// ko nn ni chi ha
+
+	return 0;
+}
+.Ed
+.Pp
+このプログラムをコンパイルするには次のように実行します.
+.Dl % c++ test.cc -larmadillo
+.
+.
+.Sh FILES
+.Pa /dev/hd44780
+.
+.
+.Sh COPYRIGHT
+Copyright \(co 2021
+.An KusaReMKN .
+.Pp
+プログラムは MIT License で利用可能です.
+文書は CC-BY 4.0 かそれ以上で利用可能です.
+.
+.
+.Sh BUGS
+キャラクタ LCD はかな漢字を表示できません.
+また,
+半角カナを出力する際のコードは醜く読み辛いものになります.
+.Pp
+キャラクタ LCD の
+1 行に表示可能な文字数を超えて出力した場合の動作を把握していません.
