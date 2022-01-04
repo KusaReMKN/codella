@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <pthread.h>
 
 #include <cstdio>
 #include <cstdarg>
@@ -61,6 +62,7 @@ namespace armadillo {
 		color::color_t *display_buf;
 		color::color_t *worker_buf;
 		unsigned int draw_level;
+		pthread_mutex_t draw_mutex;
 
 		FT_Library library;
 		struct { FT_Face face; bool set; } face_set;

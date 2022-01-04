@@ -244,6 +244,8 @@ armadillo::display::display():
 
 	if (std::setlocale(LC_CTYPE, "") == NULL)
 		throw std::runtime_error(armadillo::errmsg("setlocale"));
+
+	pthread_mutex_init(&draw_mutex, NULL);
 }
 
 armadillo::display::~display()
@@ -262,22 +264,28 @@ armadillo::display::~display()
 void
 armadillo::display::draw_start()
 {
-	if (draw_level++ == 0)
+	if (draw_level++ == 0) {
+		pthread_mutex_lock(&draw_mutex);
 		std::memcpy(worker_buf, display_buf, DISPLAY_BUFFER_SIZE);
+	}
 }
 
 void
 armadillo::display::draw_init()
 {
-	if (draw_level++ == 0)
+	if (draw_level++ == 0) {
+		pthread_mutex_lock(&draw_mutex);
 		std::memset(worker_buf, 0, DISPLAY_BUFFER_SIZE);
+	}
 }
 
 void
 armadillo::display::draw_end()
 {
-	if (--draw_level == 0)
+	if (--draw_level == 0) {
 		std::memcpy(display_buf, worker_buf, DISPLAY_BUFFER_SIZE);
+		pthread_mutex_unlock(&draw_mutex);
+	}
 }
 
 int
